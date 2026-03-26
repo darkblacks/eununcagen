@@ -8,12 +8,17 @@ export default function WaitingPage() {
   const { participants } = useGame();
 
   return (
-    <Layout title="Esperando iniciar" subtitle="Aguarde o líder começar a rodada.">
+    <Layout title="" subtitle="">
       {appUser?.role === "admin" && <AdminPanel />}
 
-      <div className="card waiting-box">
-        <h2>Esperando iniciar</h2>
-        <p>Assim que o admin iniciar, a pergunta aparecerá para todos.</p>
+      <div className="waiting-highlight card">
+        <div className="waiting-icon">⏳</div>
+        <div className="waiting-copy">
+          <h2>Partida ainda não iniciada</h2>
+          <p>
+            Assim que o admin iniciar, a pergunta aparecerá para todos.
+          </p>
+        </div>
       </div>
 
       <div className="card">
@@ -22,7 +27,6 @@ export default function WaitingPage() {
           {participants.map((participant) => (
             <div key={participant.uid} className="list-item">
               <strong>{participant.name}</strong>
-              <span>{participant.role === "admin" ? "Admin" : "Aluno"}</span>
             </div>
           ))}
         </div>

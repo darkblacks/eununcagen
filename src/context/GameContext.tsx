@@ -44,14 +44,16 @@ interface GameContextValue {
 
 const GameContext = createContext<GameContextValue | undefined>(undefined);
 
+
 export function GameProvider({ children }: { children: ReactNode }) {
   const [roomState, setRoomState] = useState<RoomState>({
-    status: "waiting",
-    currentQuestionIndex: 0,
-    currentQuestionText: questions[0]?.text ?? "",
-    currentQuestionCategory: questions[0]?.category ?? "",
-    currentRoundId: 1,
-  });
+  status: "waiting",
+  currentQuestionIndex: 0,
+  currentQuestionText: "",
+  currentQuestionCategory: "",
+  currentRoundId: 1,
+  timeLeft: 10,
+});
 
   const [currentQuestionAnswers, setCurrentQuestionAnswers] = useState<AnswerRow[]>([]);
   const [allAnswers, setAllAnswers] = useState<AnswerRow[]>([]);
@@ -105,12 +107,14 @@ export function GameProvider({ children }: { children: ReactNode }) {
     const room = await getRoom();
 
     setRoomState({
-      status: room.status,
-      currentQuestionIndex: room.current_question_index,
-      currentQuestionText: room.current_question_text,
-      currentQuestionCategory: room.current_question_category,
-      currentRoundId: room.current_round_id,
-    });
+  status: room.status,
+  currentQuestionIndex: room.current_question_index,
+  currentQuestionText: room.current_question_text,
+  currentQuestionCategory: room.current_question_category,
+  currentRoundId: room.current_round_id,
+  timeLeft: room.time_left,
+});
+
 
     const [questionAnswers, everyAnswer] = await Promise.all([
       loadAnswersByQuestion(room.current_question_index),

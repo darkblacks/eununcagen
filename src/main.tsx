@@ -4,13 +4,16 @@ import App from "./App";
 import "./styles/globals.css";
 import { AuthProvider } from "./context/AuthContext";
 import { GameProvider } from "./context/GameContext";
+import { ThemeProvider } from "./context/ThemeContext";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <AuthProvider>
-      <GameProvider>
-        <App />
-      </GameProvider>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <GameProvider>
+          <App />
+        </GameProvider>
+      </AuthProvider>
+    </ThemeProvider>
   </React.StrictMode>
 );
