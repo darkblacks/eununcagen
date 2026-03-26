@@ -1,73 +1,90 @@
-# React + TypeScript + Vite
+# Eu Nunca Generation
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Aplicação web interativa do jogo **Eu Nunca**, desenvolvida para turmas da **Generation Brasil**, com autenticação, votação em tempo real, controle de presença online e ranking final.
 
-Currently, two official plugins are available:
+O projeto foi construído para proporcionar uma experiência simples, visual e dinâmica durante a brincadeira, permitindo que os participantes entrem com suas contas, acompanhem as perguntas, votem e visualizem o andamento da rodada.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+---
 
-## React Compiler
+## Visão geral
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+O sistema funciona em torno de uma sala principal, onde:
 
-## Expanding the ESLint configuration
+- os usuários entram com login já cadastrado
+- o administrador controla o início e o avanço das rodadas
+- os participantes votam em cada pergunta
+- a aplicação mostra quem está online
+- a interface indica quem já votou e quem ainda está aguardando
+- ao final, o ranking consolida os resultados da partida
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+---
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## Funcionalidades
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+### Autenticação
+- Login de usuários via **Firebase Authentication**
+- Separação de perfil entre **admin** e **student**
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+### Fluxo do jogo
+- Tela de espera antes do início da partida
+- Início da rodada pelo administrador
+- Exibição da pergunta atual
+- Registro do voto de cada participante
+- Proteção para evitar voto duplicado na mesma pergunta
+- Avanço de perguntas até o ranking final
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### Presença e acompanhamento
+- Lista de participantes online
+- Atualização automática da presença dos usuários
+- Indicação visual de quem:
+  - já votou
+  - ainda está aguardando voto
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### Ranking
+- Contagem total de:
+  - **Eu Já**
+  - **Eu Nunca**
+- Ranking final por participante
+- Exibição consolidada dos resultados da partida
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+### Interface
+- Layout moderno e responsivo
+- Alternância de tema
+- Feedback visual durante sincronização e votação
+
+---
+
+## Tecnologias utilizadas
+
+### Front-end
+- **React**
+- **TypeScript**
+- **Vite**
+
+### Serviços e banco
+- **Firebase Authentication** para login
+- **Supabase** para persistência dos dados do jogo
+
+### Visualização
+- **ECharts**
+- **echarts-for-react**
+
+---
+
+## Estrutura principal do projeto
+
+```bash
+src/
+├── assets/               # imagens e arquivos visuais
+├── components/           # componentes reutilizáveis
+├── context/              # AuthContext, GameContext, ThemeContext
+├── data/                 # perguntas do jogo
+├── pages/                # Login, Waiting, Game, Ranking, AdminPanel
+├── routes/               # roteamento principal da aplicação
+├── services/             # integração com Firebase e Supabase
+├── styles/               # estilos globais
+├── types/                # tipagens TypeScript
+├── utils/                # constantes e utilitários
+├── App.tsx
+├── main.tsx
+└── supabase.ts
