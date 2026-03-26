@@ -29,7 +29,7 @@ export async function getRoom() {
   return data;
 }
 
-export async function startRoomRound(index = 0) {
+export async function startRoomRound(index: number) {
   const question = questions[index];
   if (!question) return;
 
@@ -48,7 +48,7 @@ export async function startRoomRound(index = 0) {
   if (error) throw error;
 }
 
-export async function setRoomRanking() {
+export async function goToRanking() {
   const { error } = await db
     .from("rooms")
     .update({

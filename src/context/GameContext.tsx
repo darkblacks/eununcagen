@@ -4,29 +4,45 @@ import { auth } from "../firebase";
 import { questions } from "../data/questions";
 import type { Participant, RoomState } from "../types/game";
 import type { RankingEntry } from "../types/ranking";
-import { getRoom, initializeRoom, resetRoom, setRoomRanking, startRoomRound } from "../services/roomService";
-import { loadVotesByRound } from "../services/voteService";
+import {
+  getRoom,
+  goToRanking,
+  initializeRoom,
+  resetRoom,
+  startRoomRound,
+} from "../services/roomService";
+import {
+  clearAllVotes,
+  loadAllVotes,
+  loadVotesByRound,
+} from "../services/voteService";
+
+type VoteRow = {
+  id: string;
+  room_id: string;
+  round_id: number;
+  user_id: string;
+  user_name: string;
+  vote: "eu-ja" | "eu-nunca";
+  created_at: number;
+};
 
 interface GameContextValue {
   roomState: RoomState;
   participants: Participant[];
-  rankingJa: RankingEntry[];
-  rankingNunca: RankingEntry[];
-  votedUserIds: string[];
-  votedNames: string[];
+  ranking: RankingEntry[];
+  currentRoundVotes: VoteRow[];
   votesCount: number;
+  totalEuJa: number;
+  totalEuNunca: number;
   startGame: () => Promise<void>;
   nextQuestion: () => Promise<void>;
-  resetGame: () => Promise<void>;
   finishRoundNow: () => Promise<void>;
-  refreshRoundData: () => Promise<void>;
+  resetGame: () => Promise<void>;
+  refreshAll: () => Promise<void>;
 }
 
 const GameContext = createContext<GameContextValue | undefined>(undefined);
-
-const baseParticipants: Participant[] = [
-  { uid: "admin", name: "Admin", role: "admin" },
-];
 
 export function GameProvider({ children }: { children: ReactNode }) {
   const [roomState, setRoomState] = useState<RoomState>({
@@ -38,117 +54,147 @@ export function GameProvider({ children }: { children: ReactNode }) {
     currentRoundId: 1,
   });
 
-  const [votedUserIds, setVotedUserIds] = useState<string[]>([]);
-  const [votedNames, setVotedNames] = useState<string[]>([]);
+  const [currentRoundVotes, setCurrentRoundVotes] = useState<VoteRow[]>([]);
+  const [allVotes, setAllVotes] = useState<VoteRow[]>([]);
 
   const participants = useMemo<Participant[]>(() => {
-    const currentUser = auth.currentUser;
-    const dynamicUser =
-      currentUser
-        ? [{
-            uid: currentUser.uid,
-            name: currentUser.email?.split("@")[0] ?? "Usuário",
-            role: currentUser.email === "admin@generation.com" ? "admin" as const : "student" as const,
-          }]
-        : [];
+    const user = auth.currentUser;
+    if (!user) return [];
 
-    const map = new Map<string, Participant>();
-    [...baseParticipants, ...dynamicUser].forEach((p) => map.set(p.uid, p));
-    return Array.from(map.values());
+    return [
+      {
+        uid: user.uid,
+        name: user.email?.split("@")[0] ?? "Usuário",
+        role: user.email === "admin@generation.com" ? "admin" : "student",
+      },
+    ];
   }, [auth.currentUser]);
 
-  const rankingJa = useMemo<RankingEntry[]>(() => [], []);
-  const rankingNunca = useMemo<RankingEntry[]>(() => [], []);
+  const ranking = useMemo<RankingEntry[]>(() => {
+    const map = new Map<string, RankingEntry>();
+
+    for (const vote of allVotes) {
+      const existing = map.get(vote.user_id) ?? {
+        uid: vote.user_id,
+        name: vote.user_name,
+        totalEuJa: 0,
+        totalEuNunca: 0,
+      };
+
+      if (vote.vote === "eu-ja") existing.totalEuJa += 1;
+      if (vote.vote === "eu-nunca") existing.totalEuNunca += 1;
+
+      map.set(vote.user_id, existing);
+    }
+
+    return Array.from(map.values()).sort(
+      (a, b) =>
+        b.totalEuJa + b.totalEuNunca - (a.totalEuJa + a.totalEuNunca)
+    );
+  }, [allVotes]);
+
+  const totalEuJa = useMemo(
+    () => allVotes.filter((vote) => vote.vote === "eu-ja").length,
+    [allVotes]
+  );
+
+  const totalEuNunca = useMemo(
+    () => allVotes.filter((vote) => vote.vote === "eu-nunca").length,
+    [allVotes]
+  );
 
   async function refreshRoom() {
-    try {
-      const room = await getRoom();
+    const room = await getRoom();
 
-      setRoomState({
-        status: room.status,
-        currentQuestionIndex: room.current_question_index,
-        currentQuestionText: room.current_question_text,
-        currentQuestionCategory: room.current_question_category,
-        timeLeft: room.time_left,
-        currentRoundId: room.current_round_id,
-      });
-    } catch (error) {
-      console.error(error);
-    }
+    setRoomState({
+      status: room.status,
+      currentQuestionIndex: room.current_question_index,
+      currentQuestionText: room.current_question_text,
+      currentQuestionCategory: room.current_question_category,
+      timeLeft: room.time_left,
+      currentRoundId: room.current_round_id,
+    });
   }
 
-  async function refreshRoundData() {
-    try {
-      const votes = await loadVotesByRound(roomState.currentRoundId);
-      setVotedUserIds(votes.map((vote) => vote.user_id));
-      setVotedNames(votes.map((vote) => vote.user_name || vote.user_id));
-    } catch (error) {
-      console.error(error);
-    }
+  async function refreshVotes(roomRoundId?: number) {
+    const roundId = roomRoundId ?? roomState.currentRoundId;
+    const [roundVotes, votes] = await Promise.all([
+      loadVotesByRound(roundId),
+      loadAllVotes(),
+    ]);
+
+    setCurrentRoundVotes(roundVotes);
+    setAllVotes(votes);
+  }
+
+  async function refreshAll() {
+    const room = await getRoom();
+
+    setRoomState({
+      status: room.status,
+      currentQuestionIndex: room.current_question_index,
+      currentQuestionText: room.current_question_text,
+      currentQuestionCategory: room.current_question_category,
+      timeLeft: room.time_left,
+      currentRoundId: room.current_round_id,
+    });
+
+    await refreshVotes(room.current_round_id);
   }
 
   async function startGame() {
     await startRoomRound(0);
-    await refreshRoom();
-    await refreshRoundData();
+    await refreshAll();
   }
 
   async function nextQuestion() {
     const nextIndex = roomState.currentQuestionIndex + 1;
 
     if (nextIndex >= questions.length) {
-      await setRoomRanking();
-      await refreshRoom();
-      await refreshRoundData();
+      await goToRanking();
+      await refreshAll();
       return;
     }
 
     await startRoomRound(nextIndex);
-    await refreshRoom();
-    await refreshRoundData();
+    await refreshAll();
   }
 
   async function finishRoundNow() {
     await nextQuestion();
   }
 
-  async function handleResetGame() {
+  async function resetGame() {
+    await clearAllVotes();
     await resetRoom();
-    setVotedUserIds([]);
-    setVotedNames([]);
-    await refreshRoom();
+    await refreshAll();
   }
 
   useEffect(() => {
-    initializeRoom().then(refreshRoom).catch(console.error);
-  }, []);
-
-  useEffect(() => {
-    refreshRoundData().catch(console.error);
+    initializeRoom().then(refreshAll).catch(console.error);
 
     const interval = setInterval(() => {
-      refreshRoom().catch(console.error);
-      refreshRoundData().catch(console.error);
+      refreshAll().catch(console.error);
     }, 2000);
 
     return () => clearInterval(interval);
-  }, [roomState.currentRoundId]);
+  }, []);
 
   return (
     <GameContext.Provider
       value={{
         roomState,
         participants,
-        rankingJa,
-        rankingNunca,
-        votedUserIds,
-        votedNames,
-        votesCount: votedUserIds.length,
+        ranking,
+        currentRoundVotes,
+        votesCount: currentRoundVotes.length,
+        totalEuJa,
+        totalEuNunca,
         startGame,
         nextQuestion,
-        resetGame: handleResetGame,
         finishRoundNow,
-        refreshRoundData,
+        resetGame,
+        refreshAll,
       }}
     >
       {children}

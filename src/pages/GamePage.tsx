@@ -1,16 +1,16 @@
 import Layout from "../components/Layout";
+import VoteButtons from "../components/VoteButtons";
 import AdminPanel from "./AdminPanel";
 import QuestionCard from "../components/QuestionCard";
-import VoteButtons from "../components/VoteButtons";
 import { useAuth } from "../context/AuthContext";
 import { useGame } from "../context/GameContext";
 
 export default function GamePage() {
   const { appUser } = useAuth();
-  const { roomState, votesCount, votedNames } = useGame();
+  const { roomState, currentRoundVotes, votesCount } = useGame();
 
   return (
-    <Layout title="Rodada em andamento" subtitle="Vote antes do tempo acabar.">
+    <Layout title="Rodada em andamento" subtitle="Vote antes da próxima pergunta.">
       {appUser?.role === "admin" && <AdminPanel />}
 
       <QuestionCard
@@ -22,23 +22,16 @@ export default function GamePage() {
       <VoteButtons />
 
       <div className="card">
-        <h3>Quem já votou</h3>
-        <p>Total de votos: {votesCount}</p>
+        <h3>Votos da rodada</h3>
+        <p>Total: {votesCount}</p>
 
         <div className="list-grid">
-          {votedNames.length === 0 ? (
-            <div className="list-item">
-              <strong>Ninguém votou ainda</strong>
-              <span>0</span>
+          {currentRoundVotes.map((vote) => (
+            <div key={vote.id} className="list-item">
+              <strong>{vote.user_name}</strong>
+              <span>{vote.vote}</span>
             </div>
-          ) : (
-            votedNames.map((name, index) => (
-              <div key={`${name}-${index}`} className="list-item">
-                <strong>{name}</strong>
-                <span>votou</span>
-              </div>
-            ))
-          )}
+          ))}
         </div>
       </div>
     </Layout>

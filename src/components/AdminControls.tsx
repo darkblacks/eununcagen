@@ -1,13 +1,13 @@
 import { useGame } from "../context/GameContext";
 
 export default function AdminControls() {
-  const { startGame, nextQuestion, resetGame, finishRoundNow, roomState } = useGame();
+  const { roomState, startGame, nextQuestion, finishRoundNow, resetGame } = useGame();
 
   return (
-    <div className="admin-controls card">
+    <div className="card" style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
       {roomState.status === "waiting" && (
         <button className="primary-btn" onClick={startGame}>
-          Iniciar
+          Iniciar jogo
         </button>
       )}
 
@@ -23,7 +23,7 @@ export default function AdminControls() {
       )}
 
       <button className="danger-btn" onClick={resetGame}>
-        Resetar jogo
+        Resetar tudo
       </button>
     </div>
   );
