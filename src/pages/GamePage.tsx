@@ -10,6 +10,7 @@ import { loadAnswersByQuestion } from "../services/voteService";
 type AnswerRow = {
   id: string;
   user_id: string;
+  user_name?: string;
   question_index: number;
   round_id: number;
   answer: boolean;
@@ -20,6 +21,7 @@ type SidebarPerson = {
   uid: string;
   name: string;
   hasVoted: boolean;
+  isMe: boolean;
 };
 
 const POLL_STEPS = [5000, 15000, 30000];
@@ -41,35 +43,36 @@ export default function GamePage() {
   }, [liveAnswers]);
 
   const sidebarPeople = useMemo<SidebarPerson[]>(() => {
-  const map = new Map<string, SidebarPerson>();
+    const map = new Map<string, SidebarPerson>();
 
-  participants.forEach((participant) => {
-    map.set(participant.uid, {
-      uid: participant.uid,
-      name: participant.name,
-      hasVoted: votedUserIds.has(participant.uid),
-    });
-  });
-
-  liveAnswers.forEach((answer) => {
-    const existing = map.get(answer.user_id);
-
-    if (existing) {
-      existing.hasVoted = true;
-    } else {
-      map.set(answer.user_id, {
-        uid: answer.user_id,
-        name: (answer as any).user_name ?? "Usuário",
-        hasVoted: true,
+    for (const participant of participants) {
+      map.set(participant.uid, {
+        uid: participant.uid,
+        name: participant.name,
+        hasVoted: votedUserIds.has(participant.uid),
+        isMe: participant.uid === appUser?.uid,
       });
     }
-  });
 
-  return Array.from(map.values()).sort((a, b) => {
-    if (a.hasVoted === b.hasVoted) return a.name.localeCompare(b.name);
-    return a.hasVoted ? -1 : 1;
-  });
-}, [participants, liveAnswers, votedUserIds]);
+    for (const answer of liveAnswers) {
+      const existing = map.get(answer.user_id);
+
+      if (existing) {
+        existing.hasVoted = true;
+      } else {
+        map.set(answer.user_id, {
+          uid: answer.user_id,
+          name: answer.user_name ?? "Usuário",
+          hasVoted: true,
+          isMe: answer.user_id === appUser?.uid,
+        });
+      }
+    }
+
+    return Array.from(map.values()).sort((a, b) =>
+      a.name.localeCompare(b.name, "pt-BR", { sensitivity: "base" })
+    );
+  }, [participants, liveAnswers, votedUserIds, appUser?.uid]);
 
   function buildSignature(data: AnswerRow[]) {
     return JSON.stringify(
@@ -97,7 +100,6 @@ export default function GamePage() {
       if (changed) {
         setLiveAnswers(data);
         lastSignatureRef.current = nextSignature;
-
         pollStepIndexRef.current = 0;
         setPollLabel("5s");
       } else {
@@ -105,7 +107,6 @@ export default function GamePage() {
           pollStepIndexRef.current + 1,
           POLL_STEPS.length - 1
         );
-
         pollStepIndexRef.current = nextStep;
         setPollLabel(`${POLL_STEPS[nextStep] / 1000}s`);
       }
@@ -116,14 +117,12 @@ export default function GamePage() {
         pollStepIndexRef.current + 1,
         POLL_STEPS.length - 1
       );
-
       pollStepIndexRef.current = nextStep;
       setPollLabel(`${POLL_STEPS[nextStep] / 1000}s`);
     } finally {
       setLoadingVotes(false);
 
       const nextDelay = POLL_STEPS[pollStepIndexRef.current];
-
       timerRef.current = window.setTimeout(() => {
         fetchAnswersWithBackoff();
       }, nextDelay);
@@ -131,22 +130,23 @@ export default function GamePage() {
   }
 
   useEffect(() => {
-  if (timerRef.current) {
-    window.clearTimeout(timerRef.current);
-  }
-
-  setLoadingVotes(true);
-  pollStepIndexRef.current = 0;
-  setPollLabel("5s");
-
-  fetchAnswersWithBackoff();
-
-  return () => {
     if (timerRef.current) {
       window.clearTimeout(timerRef.current);
     }
-  };
-}, [roomState.currentQuestionIndex, roomState.currentRoundId]);
+
+    setLoadingVotes(true);
+    pollStepIndexRef.current = 0;
+    setPollLabel("5s");
+    lastSignatureRef.current = "";
+
+    fetchAnswersWithBackoff();
+
+    return () => {
+      if (timerRef.current) {
+        window.clearTimeout(timerRef.current);
+      }
+    };
+  }, [roomState.currentQuestionIndex, roomState.currentRoundId]);
 
   return (
     <Layout title="" subtitle="">
@@ -169,38 +169,44 @@ export default function GamePage() {
         </section>
 
         <aside className="game-sidebar card">
-  <div className="sidebar-header">
-    <h3>Participantes</h3>
-    <span>{sidebarPeople.length} visíveis</span>
-  </div>
+          <div className="sidebar-header">
+            <h3>Participantes online</h3>
+            <span>{sidebarPeople.length} visíveis</span>
+          </div>
 
-  <div className="sidebar-sync-line">
-    <span className={`sync-dot ${loadingVotes ? "loading" : ""}`} />
-    {loadingVotes
-      ? "Sincronizando votos..."
-      : `Atualização automática: ${pollLabel}`}
-  </div>
+          <div className="sidebar-sync-line">
+            <span className={`sync-dot ${loadingVotes ? "loading" : ""}`} />
+            {loadingVotes
+              ? "Sincronizando votos..."
+              : `Atualização automática: ${pollLabel}`}
+          </div>
 
-  <div className="participant-list">
-    {sidebarPeople.map((person) => (
-      <div key={person.uid} className="participant-item">
-        <div className="participant-user">
-          <strong>{person.name}</strong>
-        </div>
+          <div className="participant-list">
+            {sidebarPeople.map((person) => (
+              <div
+                key={person.uid}
+                className={`participant-item ${person.isMe ? "me" : ""} ${
+                  person.hasVoted ? "participant-done" : "participant-pending"
+                }`}
+              >
+                <div className="participant-user">
+                  <div className="participant-name-line">
+                    <strong>{person.name}</strong>
+                    {person.isMe && <span className="me-badge">me</span>}
+                  </div>
+                </div>
 
-        <div
-          className={`participant-status ${
-            person.hasVoted ? "success" : "waiting"
-          }`}
-        >
-          {person.hasVoted
-            ? "Voto concluído com sucesso"
-            : "Aguardando voto"}
-        </div>
-      </div>
-    ))}
-  </div>
-</aside>
+                <div
+                  className={`participant-status ${
+                    person.hasVoted ? "success" : "waiting"
+                  }`}
+                >
+                  {person.hasVoted ? "Já votou" : "Ainda não votou"}
+                </div>
+              </div>
+            ))}
+          </div>
+        </aside>
       </div>
     </Layout>
   );
