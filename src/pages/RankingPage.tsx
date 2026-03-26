@@ -1,24 +1,19 @@
-import type { RankingEntry } from "../types/ranking";
+import Layout from "../components/Layout";
+import RankingCard from "../components/RankingCard";
+import { useGame } from "../context/GameContext";
 
-type RankingCardProps = {
-  title: string;
-  items: RankingEntry[];
-};
+export default function RankingPage() {
+  const { rankingJa, rankingNunca } = useGame();
 
-export default function RankingCard({ title, items }: RankingCardProps) {
   return (
-    <div className="card">
-      <h3>{title}</h3>
-      <div className="list-grid">
-        {items.map((item, index) => (
-          <div key={item.uid} className="list-item">
-            <strong>
-              {index + 1}. {item.name}
-            </strong>
-            <span>{item.total}</span>
-          </div>
-        ))}
+    <Layout
+      title="Ranking"
+      subtitle="Veja quem mais marcou em cada categoria."
+    >
+      <div className="ranking-grid">
+        <RankingCard title="Quem mais respondeu Eu Já" items={rankingJa} />
+        <RankingCard title="Quem mais respondeu Eu Nunca" items={rankingNunca} />
       </div>
-    </div>
+    </Layout>
   );
 }

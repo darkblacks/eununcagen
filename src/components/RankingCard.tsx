@@ -1,22 +1,24 @@
 import type { RankingEntry } from "../types/ranking";
 
 type RankingCardProps = {
-  entry: RankingEntry;
+  title: string;
+  items: RankingEntry[];
 };
 
-export default function RankingCard({ entry }: RankingCardProps) {
+export default function RankingCard({ title, items }: RankingCardProps) {
   return (
-    <div className="rounded-xl border border-zinc-700 bg-zinc-900 p-4 shadow-sm">
-      <div className="flex items-center justify-between">
-        <span className="text-sm text-zinc-400">
-          {entry.position ? `#${entry.position}` : "Participante"}
-        </span>
-        <span className="text-sm font-semibold text-emerald-400">
-          {entry.score} pts
-        </span>
+    <div className="card">
+      <h3>{title}</h3>
+      <div className="list-grid">
+        {items.map((item, index) => (
+          <div key={item.uid} className="list-item">
+            <strong>
+              {index + 1}. {item.name}
+            </strong>
+            <span>{item.total}</span>
+          </div>
+        ))}
       </div>
-
-      <h3 className="mt-2 text-lg font-bold text-white">{entry.name}</h3>
     </div>
   );
 }
