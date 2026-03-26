@@ -1,15 +1,15 @@
-export type GameStatus = "waiting" | "playing" | "finished";
+export type GameStatus = "waiting" | "playing" | "ranking";
 
 export type Participant = {
-  id: string;
+  uid: string;
   name: string;
-  score: number;
-  hasVoted?: boolean;
+  role: "admin" | "student";
 };
 
 export type RoomState = {
-  code: string;
-  currentQuestionIndex: number;
   status: GameStatus;
-  participants: Participant[];
+  currentQuestionIndex: number;
+  currentQuestionText: string;
+  currentQuestionCategory: string;
+  timeLeft: number;
 };

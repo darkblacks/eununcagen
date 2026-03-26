@@ -1,4 +1,5 @@
-import { createContext, ReactNode, useContext, useMemo, useState } from "react";
+import { createContext, useContext, useMemo, useState } from "react";
+import type { ReactNode } from "react";
 import { questions } from "../data/questions";
 import type { Participant, RoomState } from "../types/game";
 import type { RankingEntry } from "../types/ranking";
@@ -49,14 +50,13 @@ export function GameProvider({ children }: { children: ReactNode }) {
   );
 
   function startGame() {
-    setRoomState((prev) => ({
-      ...prev,
+    setRoomState({
       status: "playing",
       currentQuestionIndex: 0,
       currentQuestionText: questions[0]?.text ?? "",
       currentQuestionCategory: questions[0]?.category ?? "",
       timeLeft: 10,
-    }));
+    });
   }
 
   function goToWaiting() {

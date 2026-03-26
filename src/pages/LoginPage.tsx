@@ -1,4 +1,4 @@
-import { FormEvent, useState } from "react";
+import type { FormEvent, useState } from "react";
 import Layout from "../components/Layout";
 import { loginWithEmail } from "../services/authService";
 export default function LoginPage() {

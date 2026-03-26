@@ -1,6 +1,5 @@
 export type RankingEntry = {
-  id: string;
+  uid: string;
   name: string;
-  score: number;
-  position?: number;
+  total: number;
 };

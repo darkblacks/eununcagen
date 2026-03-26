@@ -1,4 +1,5 @@
-import { createContext, ReactNode, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import type { ReactNode } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import type { User } from "firebase/auth";
 import { auth } from "../firebase";
@@ -28,7 +29,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const appUser = useMemo<AppUser | null>(() => {
     if (!user) return null;
 
-    const isAdmin = user.email === "capivara@gen.com";
+    const isAdmin = user.email === "admin@generation.com";
 
     return {
       uid: user.uid,
