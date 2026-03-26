@@ -1,9 +1,9 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
-import { auth } from "../firebase";
 import { questions } from "../data/questions";
 import type { Participant, RoomState } from "../types/game";
 import type { RankingEntry } from "../types/ranking";
+import { useAuth } from "./AuthContext";
 import {
   getRoom,
   goToRanking,
@@ -16,6 +16,10 @@ import {
   loadAllAnswers,
   loadAnswersByQuestion,
 } from "../services/voteService";
+import {
+  loadOnlineParticipants,
+  startPresenceHeartbeat,
+} from "../services/presenceService";
 
 type AnswerRow = {
   id: string;
@@ -44,32 +48,23 @@ interface GameContextValue {
 
 const GameContext = createContext<GameContextValue | undefined>(undefined);
 
-
 export function GameProvider({ children }: { children: ReactNode }) {
+  const { appUser } = useAuth();
+
   const [roomState, setRoomState] = useState<RoomState>({
-  status: "waiting",
-  currentQuestionIndex: 0,
-  currentQuestionText: "",
-  currentQuestionCategory: "",
-  currentRoundId: 1,
-  timeLeft: 10,
-});
+    status: "waiting",
+    currentQuestionIndex: 0,
+    currentQuestionText: "",
+    currentQuestionCategory: "",
+    currentRoundId: 1,
+    timeLeft: 10,
+  });
 
-  const [currentQuestionAnswers, setCurrentQuestionAnswers] = useState<AnswerRow[]>([]);
+  const [participants, setParticipants] = useState<Participant[]>([]);
+  const [currentQuestionAnswers, setCurrentQuestionAnswers] = useState<
+    AnswerRow[]
+  >([]);
   const [allAnswers, setAllAnswers] = useState<AnswerRow[]>([]);
-
-  const participants = useMemo<Participant[]>(() => {
-    const user = auth.currentUser;
-    if (!user) return [];
-
-    return [
-      {
-        uid: user.uid,
-        name: user.email?.split("@")[0] ?? "Usuário",
-        role: user.email === "admin@generation.com" ? "admin" : "student",
-      },
-    ];
-  }, [auth.currentUser]);
 
   const ranking = useMemo<RankingEntry[]>(() => {
     const map = new Map<string, RankingEntry>();
@@ -89,7 +84,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
     }
 
     return Array.from(map.values()).sort(
-      (a, b) => b.totalEuJa + b.totalEuNunca - (a.totalEuJa + a.totalEuNunca)
+      (a, b) =>
+        b.totalEuJa + b.totalEuNunca - (a.totalEuJa + a.totalEuNunca)
     );
   }, [allAnswers]);
 
@@ -107,22 +103,23 @@ export function GameProvider({ children }: { children: ReactNode }) {
     const room = await getRoom();
 
     setRoomState({
-  status: room.status,
-  currentQuestionIndex: room.current_question_index,
-  currentQuestionText: room.current_question_text,
-  currentQuestionCategory: room.current_question_category,
-  currentRoundId: room.current_round_id,
-  timeLeft: room.time_left,
-});
+      status: room.status,
+      currentQuestionIndex: room.current_question_index,
+      currentQuestionText: room.current_question_text,
+      currentQuestionCategory: room.current_question_category,
+      currentRoundId: room.current_round_id,
+      timeLeft: room.time_left,
+    });
 
-
-    const [questionAnswers, everyAnswer] = await Promise.all([
+    const [questionAnswers, everyAnswer, onlinePeople] = await Promise.all([
       loadAnswersByQuestion(room.current_question_index),
       loadAllAnswers(),
+      loadOnlineParticipants(),
     ]);
 
     setCurrentQuestionAnswers(questionAnswers);
     setAllAnswers(everyAnswer);
+    setParticipants(onlinePeople);
   }
 
   async function startGame() {
@@ -151,14 +148,24 @@ export function GameProvider({ children }: { children: ReactNode }) {
   }
 
   useEffect(() => {
+    if (!appUser) {
+      setParticipants([]);
+      return;
+    }
+
+    const stopHeartbeat = startPresenceHeartbeat(appUser);
+
     initializeRoom().then(refreshAll).catch(console.error);
 
     const interval = setInterval(() => {
       refreshAll().catch(console.error);
     }, 2000);
 
-    return () => clearInterval(interval);
-  }, []);
+    return () => {
+      stopHeartbeat();
+      clearInterval(interval);
+    };
+  }, [appUser?.uid]);
 
   return (
     <GameContext.Provider

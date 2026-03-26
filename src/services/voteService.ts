@@ -38,17 +38,14 @@ export async function saveAnswer(
       question_index: questionIndex,
       round_id: roundId,
       user_id: user.uid,
-      user_name: user.email ?? "usuario@gen.com",
+      user_name: user.email?.split("@")[0] ?? "Usuário",
       answer,
       created_at: Date.now(),
     };
 
     console.log("payload enviado para Supabase:", payload);
 
-    const { data, error } = await db
-      .from("answers")
-      .upsert(payload)
-      .select();
+    const { data, error } = await db.from("answers").upsert(payload).select();
 
     console.log("retorno do upsert:", { data, error });
 
@@ -114,6 +111,40 @@ export async function loadAllAnswers() {
     return data ?? [];
   } catch (err) {
     console.error("erro em loadAllAnswers:", err);
+    throw err;
+  } finally {
+    console.groupEnd();
+  }
+}
+
+export async function loadMyAnswerForQuestion(questionIndex: number) {
+  console.group("loadMyAnswerForQuestion");
+
+  try {
+    const user = auth.currentUser;
+
+    if (!user) {
+      return null;
+    }
+
+    const { data, error } = await db
+      .from("answers")
+      .select("*")
+      .eq("room_id", DEFAULT_ROOM_ID)
+      .eq("question_index", questionIndex)
+      .eq("user_id", user.uid)
+      .maybeSingle();
+
+    console.log("retorno da busca do meu voto:", { data, error });
+
+    if (error) {
+      console.error("erro ao carregar meu voto:", error);
+      throw error;
+    }
+
+    return data;
+  } catch (err) {
+    console.error("erro em loadMyAnswerForQuestion:", err);
     throw err;
   } finally {
     console.groupEnd();
