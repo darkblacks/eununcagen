@@ -11,7 +11,6 @@ export async function initializeRoom() {
     current_question_index: 0,
     current_question_text: question?.text ?? "",
     current_question_category: question?.category ?? "",
-    time_left: 10,
     current_round_id: 1,
   });
 
@@ -40,7 +39,6 @@ export async function startRoomRound(index: number) {
       current_question_index: index,
       current_question_text: question.text,
       current_question_category: question.category,
-      time_left: 10,
       current_round_id: index + 1,
     })
     .eq("id", DEFAULT_ROOM_ID);
@@ -53,7 +51,6 @@ export async function goToRanking() {
     .from("rooms")
     .update({
       status: "ranking",
-      time_left: 0,
     })
     .eq("id", DEFAULT_ROOM_ID);
 
@@ -70,7 +67,6 @@ export async function resetRoom() {
       current_question_index: 0,
       current_question_text: question?.text ?? "",
       current_question_category: question?.category ?? "",
-      time_left: 10,
       current_round_id: 1,
     })
     .eq("id", DEFAULT_ROOM_ID);

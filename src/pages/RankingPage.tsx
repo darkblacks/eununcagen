@@ -1,21 +1,70 @@
 import Layout from "../components/Layout";
-import RankingCard from "../components/RankingCard";
+import { useAuth } from "../context/AuthContext";
 import { useGame } from "../context/GameContext";
+import ReactECharts from "echarts-for-react";
 
 export default function RankingPage() {
-  const { ranking } = useGame();
+  const { appUser } = useAuth();
+  const { ranking, totalEuJa, totalEuNunca, resetGame } = useGame();
 
-  const rankingEuJa = [...ranking].sort((a, b) => b.totalEuJa - a.totalEuJa);
-  const rankingEuNunca = [...ranking].sort(
-    (a, b) => b.totalEuNunca - a.totalEuNunca
-  );
+  const chartOption = {
+    tooltip: { trigger: "axis" },
+    xAxis: {
+      type: "category",
+      data: ["Eu Já", "Eu Nunca"],
+    },
+    yAxis: {
+      type: "value",
+    },
+    series: [
+      {
+        type: "bar",
+        data: [totalEuJa, totalEuNunca],
+      },
+    ],
+  };
 
   return (
-    <Layout title="Ranking" subtitle="Resultado final da rodada.">
-      <div className="ranking-grid">
-        <RankingCard title="Quem mais respondeu Eu Já" items={rankingEuJa} />
-        <RankingCard title="Quem mais respondeu Eu Nunca" items={rankingEuNunca} />
+    <Layout title="Ranking" subtitle="Resultado final do jogo.">
+      <div className="card">
+        <h3>Resumo geral</h3>
+        <p>Total Eu Já: {totalEuJa}</p>
+        <p>Total Eu Nunca: {totalEuNunca}</p>
+        <ReactECharts option={chartOption} style={{ height: 320 }} />
       </div>
+
+      <div className="card">
+        <h3>Ranking por participante</h3>
+
+        <div className="list-grid">
+          {ranking.length === 0 ? (
+            <div className="list-item">
+              <strong>Nenhuma resposta registrada</strong>
+              <span>0</span>
+            </div>
+          ) : (
+            ranking.map((item) => (
+              <div key={item.uid} className="list-item">
+                <div>
+                  <strong>{item.name}</strong>
+                </div>
+                <div style={{ textAlign: "right" }}>
+                  <div>{item.totalEuJa} votos eu já</div>
+                  <div>{item.totalEuNunca} votos eu nunca</div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+
+      {appUser?.role === "admin" && (
+        <div className="card">
+          <button className="danger-btn" onClick={resetGame}>
+            Finalizar e limpar respostas
+          </button>
+        </div>
+      )}
     </Layout>
   );
 }

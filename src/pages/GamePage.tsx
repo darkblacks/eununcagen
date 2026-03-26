@@ -7,31 +7,38 @@ import { useGame } from "../context/GameContext";
 
 export default function GamePage() {
   const { appUser } = useAuth();
-  const { roomState, currentRoundVotes, votesCount } = useGame();
+  const { currentQuestionAnswers, roomState } = useGame();
 
   return (
-    <Layout title="Rodada em andamento" subtitle="Vote antes da próxima pergunta.">
+    <Layout title="Rodada em andamento" subtitle="Responda a pergunta atual.">
       {appUser?.role === "admin" && <AdminPanel />}
 
       <QuestionCard
         category={roomState.currentQuestionCategory}
         question={roomState.currentQuestionText}
-        timeLeft={roomState.timeLeft}
+        timeLeft={10}
       />
 
       <VoteButtons />
 
       <div className="card">
-        <h3>Votos da rodada</h3>
-        <p>Total: {votesCount}</p>
+        <h3>Quem já respondeu nesta pergunta</h3>
+        <p>Total: {currentQuestionAnswers.length}</p>
 
         <div className="list-grid">
-          {currentRoundVotes.map((vote) => (
-            <div key={vote.id} className="list-item">
-              <strong>{vote.user_name}</strong>
-              <span>{vote.vote}</span>
+          {currentQuestionAnswers.length === 0 ? (
+            <div className="list-item">
+              <strong>Ninguém respondeu ainda</strong>
+              <span>0</span>
             </div>
-          ))}
+          ) : (
+            currentQuestionAnswers.map((row) => (
+              <div key={row.id} className="list-item">
+                <strong>{row.user_name}</strong>
+                <span>{row.answer ? "Eu Já" : "Eu Nunca"}</span>
+              </div>
+            ))
+          )}
         </div>
       </div>
     </Layout>
