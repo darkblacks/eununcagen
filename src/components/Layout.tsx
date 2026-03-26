@@ -1,54 +1,65 @@
-import Layout from "../components/Layout";
-import { useGame } from "../context/GameContext";
-import ReactECharts from "echarts-for-react";
+import type { ReactNode } from "react";
+import { useAuth } from "../context/AuthContext";
+import { logout } from "../services/authService";
 
-export default function RankingPage() {
-  const { ranking, totalEuJa, totalEuNunca } = useGame();
+type LayoutProps = {
+  title: string;
+  subtitle?: string;
+  children: ReactNode;
+};
 
-  const option = {
-    tooltip: { trigger: "item" },
-    xAxis: {
-      type: "category",
-      data: ["Eu Já", "Eu Nunca"],
-    },
-    yAxis: {
-      type: "value",
-    },
-    series: [
-      {
-        type: "bar",
-        data: [totalEuJa, totalEuNunca],
-        barWidth: "40%",
-      },
-    ],
-  };
+export default function Layout({ title, subtitle, children }: LayoutProps) {
+  const { appUser } = useAuth();
+
+  async function handleLogout() {
+    try {
+      await logout();
+    } catch (error) {
+      console.error(error);
+      alert("Não foi possível sair.");
+    }
+  }
 
   return (
-    <Layout title="Ranking" subtitle="Resultado final da rodada.">
-      <div className="card">
-        <h3>Resumo dos votos</h3>
-        <p>Total Eu Já: {totalEuJa}</p>
-        <p>Total Eu Nunca: {totalEuNunca}</p>
-        <ReactECharts option={option} style={{ height: 320 }} />
-      </div>
-
-      <div className="card">
-        <h3>Ranking por participante</h3>
-
-        <div className="list-grid">
-          {ranking.map((item) => (
-            <div key={item.uid} className="list-item">
-              <div>
-                <strong>{item.name}</strong>
-              </div>
-              <div style={{ textAlign: "right" }}>
-                <div>{item.totalEuJa} votos eu já</div>
-                <div>{item.totalEuNunca} votos eu nunca</div>
-              </div>
+    <div className="app-shell">
+      <div className="app-container">
+        <header className="page-header card">
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              gap: 16,
+              alignItems: "start",
+            }}
+          >
+            <div>
+              <p className="eyebrow">Generation</p>
+              <h1>{title}</h1>
+              {subtitle && <p className="subtitle">{subtitle}</p>}
             </div>
-          ))}
-        </div>
+
+            {appUser && (
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 8,
+                  alignItems: "flex-end",
+                }}
+              >
+                <span style={{ fontSize: 14 }}>
+                  {appUser.name} {appUser.role === "admin" ? "(admin)" : ""}
+                </span>
+                <button className="secondary-btn" onClick={handleLogout}>
+                  Sair
+                </button>
+              </div>
+            )}
+          </div>
+        </header>
+
+        <main className="page-content">{children}</main>
       </div>
-    </Layout>
+    </div>
   );
 }

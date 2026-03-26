@@ -103,18 +103,6 @@ export function GameProvider({ children }: { children: ReactNode }) {
     [allVotes]
   );
 
-  async function refreshRoom() {
-    const room = await getRoom();
-
-    setRoomState({
-      status: room.status,
-      currentQuestionIndex: room.current_question_index,
-      currentQuestionText: room.current_question_text,
-      currentQuestionCategory: room.current_question_category,
-      timeLeft: room.time_left,
-      currentRoundId: room.current_round_id,
-    });
-  }
 
   async function refreshVotes(roomRoundId?: number) {
     const roundId = roomRoundId ?? roomState.currentRoundId;
