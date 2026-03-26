@@ -12,4 +12,5 @@ export type RoomState = {
   currentQuestionText: string;
   currentQuestionCategory: string;
   timeLeft: number;
+  currentRoundId: number;
 };

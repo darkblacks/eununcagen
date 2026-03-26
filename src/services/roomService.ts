@@ -18,6 +18,17 @@ export async function initializeRoom() {
   if (error) throw error;
 }
 
+export async function getRoom() {
+  const { data, error } = await db
+    .from("rooms")
+    .select("*")
+    .eq("id", DEFAULT_ROOM_ID)
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
 export async function startRoomRound(index = 0) {
   const question = questions[index];
   if (!question) return;
@@ -31,18 +42,6 @@ export async function startRoomRound(index = 0) {
       current_question_category: question.category,
       time_left: 10,
       current_round_id: index + 1,
-    })
-    .eq("id", DEFAULT_ROOM_ID);
-
-  if (error) throw error;
-}
-
-export async function setRoomWaiting() {
-  const { error } = await db
-    .from("rooms")
-    .update({
-      status: "waiting",
-      time_left: 10,
     })
     .eq("id", DEFAULT_ROOM_ID);
 

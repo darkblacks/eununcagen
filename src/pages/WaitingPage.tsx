@@ -5,7 +5,7 @@ import { useGame } from "../context/GameContext";
 
 export default function WaitingPage() {
   const { appUser } = useAuth();
-  const { participants = [] } = useGame();
+  const { participants } = useGame();
 
   return (
     <Layout title="Esperando iniciar" subtitle="Aguarde o líder começar a rodada.">
@@ -13,7 +13,7 @@ export default function WaitingPage() {
 
       <div className="card waiting-box">
         <h2>Esperando iniciar</h2>
-        <p>Assim que o admin iniciar, a pergunta aparecerá para todos por 10 segundos.</p>
+        <p>Assim que o admin iniciar, a pergunta aparecerá para todos.</p>
       </div>
 
       <div className="card">

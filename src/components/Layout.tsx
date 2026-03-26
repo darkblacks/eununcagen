@@ -22,26 +22,30 @@ export default function Layout({ title, subtitle, children }: LayoutProps) {
 
   return (
     <div className="app-shell">
-      <header className="app-header">
-        <div>
-          <h1>{title}</h1>
-          {subtitle && <p>{subtitle}</p>}
-        </div>
+      <div className="app-container">
+        <header className="page-header card">
+          <div style={{ display: "flex", justifyContent: "space-between", gap: 16, alignItems: "start" }}>
+            <div>
+              <p className="eyebrow">Generation</p>
+              <h1>{title}</h1>
+              {subtitle && <p className="subtitle">{subtitle}</p>}
+            </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          {appUser && (
-            <span>
-              {appUser.name} {appUser.role === "admin" ? "(admin)" : ""}
-            </span>
-          )}
+            {appUser && (
+              <div style={{ display: "flex", flexDirection: "column", gap: 8, alignItems: "flex-end" }}>
+                <span style={{ fontSize: 14 }}>
+                  {appUser.name} {appUser.role === "admin" ? "(admin)" : ""}
+                </span>
+                <button className="secondary-btn" onClick={handleLogout}>
+                  Sair
+                </button>
+              </div>
+            )}
+          </div>
+        </header>
 
-          <button className="secondary-btn" onClick={handleLogout}>
-            Sair
-          </button>
-        </div>
-      </header>
-
-      <main>{children}</main>
+        <main className="page-content">{children}</main>
+      </div>
     </div>
   );
 }
