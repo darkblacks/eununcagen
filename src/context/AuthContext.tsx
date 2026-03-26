@@ -29,7 +29,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const appUser = useMemo<AppUser | null>(() => {
     if (!user) return null;
 
-    const isAdmin = user.email === "capivara@gen.com";
+    const isAdmin = user.email === "victors@gen.com";
 
     return {
       uid: user.uid,
